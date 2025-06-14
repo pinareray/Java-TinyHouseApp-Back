@@ -14,6 +14,9 @@ public interface HouseService {
     // Tüm ilanları listele - kim istiyor?
     DataResult<List<HouseListDto>> getAll(int requesterId);
 
+    // Aktif ilanları listele - kim istiyor?
+    DataResult<List<HouseListDto>> getActiveHouses(int requesterId);
+
     // Belirli bir ilanı getir - kim istiyor?
     DataResult<HouseDto> getById(int houseId, int requesterId);
 

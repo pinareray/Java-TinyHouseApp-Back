@@ -4,6 +4,7 @@ import com.example.tinyhouse.business.abstracts.HouseService;
 import com.example.tinyhouse.business.constants.HouseMessages;
 import com.example.tinyhouse.business.constants.UserMessages;
 import com.example.tinyhouse.core.utilities.results.*;
+import com.example.tinyhouse.dataAccess.abstracts.CommentDao;
 import com.example.tinyhouse.dataAccess.abstracts.HouseDao;
 import com.example.tinyhouse.dataAccess.abstracts.UserDao;
 import com.example.tinyhouse.entities.concretes.House;
@@ -22,11 +23,13 @@ public class HouseManager implements HouseService {
 
     private final HouseDao houseDao;
     private final UserDao userDao;
+    private final CommentDao commentDao;
 
     @Autowired
-    public HouseManager(HouseDao houseDao, UserDao userDao) {
+    public HouseManager(HouseDao houseDao, UserDao userDao, CommentDao commentDao) {
         this.houseDao = houseDao;
         this.userDao = userDao;
+        this.commentDao = commentDao;
     }
 
     @Override
@@ -38,17 +41,33 @@ public class HouseManager implements HouseService {
 
         List<House> houses = houseDao.findAll();
         List<HouseListDto> dtoList = houses.stream()
-                .map(house -> new HouseListDto(
-                        house.getId(),
-                        house.getTitle(),
-                        house.getDescription(),
-                        house.getPrice(),
-                        house.getLocation(),
-                        house.getStatus(),
-                        house.getAvailableFrom(),
-                        house.getAvailableTo()
-                ))
-                .collect(Collectors.toList());
+                .map(house -> {
+                    int commentCount = commentDao.countByHouse_Id(house.getId());
+                    Double average = commentDao.averageRatingByHouseId(house.getId());
+                    double avgRating = average != null ? average : 0.0;
+
+                    HouseListDto dto = new HouseListDto(
+                            house.getId(),
+                            house.getTitle(),
+                            house.getDescription(),
+                            house.getPrice(),
+                            house.getLocation(),
+                            house.getStatus(),
+                            house.getAvailableFrom(),
+                            house.getAvailableTo(),
+                            commentCount,
+                            avgRating,
+                            new UserDto(
+                                    house.getHost().getId(),
+                                    house.getHost().getFirstName(),
+                                    house.getHost().getLastName(),
+                                    house.getHost().getEmail(),
+                                    house.getHost().getRole(),
+                                    house.getHost().isActive()
+                            )
+                    );
+                    return dto;
+                }).collect(Collectors.toList());
         return new SuccessDataResult<>(dtoList, HouseMessages.HOUSE_LISTED);
     }
 
@@ -59,14 +78,41 @@ public class HouseManager implements HouseService {
             return new ErrorDataResult<>(requesterResult.getMessage());
         }
 
-        return houseDao.findById(houseId)
-                .<DataResult<HouseDto>>map(house -> new SuccessDataResult<>(
-                        new HouseDto(house),
-                        HouseMessages.HOUSE_FOUND
-                ))
-                .orElseGet(() -> new ErrorDataResult<>(HouseMessages.HOUSE_NOT_FOUND));
-    }
+        Optional<House> houseOpt = houseDao.findById(houseId);
+        if (houseOpt.isEmpty()) {
+            return new ErrorDataResult<>(HouseMessages.HOUSE_NOT_FOUND);
+        }
 
+        House house = houseOpt.get();
+
+        List<CommentDto> commentDtos = house.getCommentList().stream().map(c -> {
+            CommentDto dto = new CommentDto();
+            dto.setId(c.getId());
+            dto.setContent(c.getContent());
+            dto.setRating(c.getRating());
+            dto.setUserFullName(c.getUser().getFirstName() + " " + c.getUser().getLastName());
+            return dto;
+        }).collect(Collectors.toList());
+
+        int count = commentDtos.size();
+        double avg = commentDtos.stream().mapToInt(CommentDto::getRating).average().orElse(0.0);
+
+        HouseDto dto = new HouseDto(house);
+        dto.setCommentCount(count);
+        dto.setAverageRating(avg);
+        dto.setComments(commentDtos);
+
+        dto.setHost(new UserDto(  // <-- Bunu ekle
+                house.getHost().getId(),
+                house.getHost().getFirstName(),
+                house.getHost().getLastName(),
+                house.getHost().getEmail(),
+                house.getHost().getRole(),
+                house.getHost().isActive()
+        ));
+
+        return new SuccessDataResult<>(dto, HouseMessages.HOUSE_FOUND);
+    }
 
     @Override
     public DataResult<HouseDto> add(HouseCreateDto dto) {
@@ -145,19 +191,39 @@ public class HouseManager implements HouseService {
         }
 
         List<House> houses = houseDao.findByHost_Id(hostId);
+
         List<HouseListDto> dtoList = houses.stream()
-                .map(h -> new HouseListDto(
-                        h.getId(),
-                        h.getTitle(),
-                        h.getDescription(),
-                        h.getPrice(),
-                        h.getLocation(),
-                        h.getStatus(),
-                        h.getAvailableFrom(),
-                        h.getAvailableTo()))
+                .map(h -> {
+                    int commentCount = commentDao.countByHouse_Id(h.getId());
+                    Double average = commentDao.averageRatingByHouseId(h.getId());
+                    double avgRating = average != null ? average : 0.0;
+
+                    return new HouseListDto(
+                            h.getId(),
+                            h.getTitle(),
+                            h.getDescription(),
+                            h.getPrice(),
+                            h.getLocation(),
+                            h.getStatus(),
+                            h.getAvailableFrom(),
+                            h.getAvailableTo(),
+                            commentCount,
+                            avgRating,
+                            new UserDto(
+                                    h.getHost().getId(),
+                                    h.getHost().getFirstName(),
+                                    h.getHost().getLastName(),
+                                    h.getHost().getEmail(),
+                                    h.getHost().getRole(),
+                                    h.getHost().isActive()
+                            )
+                    );
+                })
                 .collect(Collectors.toList());
+
         return new SuccessDataResult<>(dtoList);
     }
+
 
 
     private DataResult<User> getValidRequester(int requesterId, UserRole... allowedRoles) {
@@ -182,6 +248,40 @@ public class HouseManager implements HouseService {
         }
 
         return new SuccessDataResult<>(user);
+    }
+
+    @Override
+    public DataResult<List<HouseListDto>> getActiveHouses(int requesterId) {
+        List<House> activeHouses = houseDao.findByStatus("Aktif");
+
+        List<HouseListDto> dtos = activeHouses.stream().map(h -> {
+            int commentCount = commentDao.countByHouse_Id(h.getId());
+            Double average = commentDao.averageRatingByHouseId(h.getId());
+            double avgRating = average != null ? average : 0.0;
+
+            return new HouseListDto(
+                    h.getId(),
+                    h.getTitle(),
+                    h.getDescription(),
+                    h.getPrice(),
+                    h.getLocation(),
+                    h.getStatus(),
+                    h.getAvailableFrom(),
+                    h.getAvailableTo(),
+                    commentCount,
+                    avgRating,
+                    new UserDto(
+                            h.getHost().getId(),
+                            h.getHost().getFirstName(),
+                            h.getHost().getLastName(),
+                            h.getHost().getEmail(),
+                            h.getHost().getRole(),
+                            h.getHost().isActive()
+                    )
+            );
+        }).collect(Collectors.toList());
+
+        return new SuccessDataResult<>(dtos);
     }
 
 }

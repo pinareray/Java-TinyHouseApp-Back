@@ -29,11 +29,17 @@ public class UserManager implements UserService {
     }
 
     @Override
-    public DataResult<List<UserListDto>> getAll() {
+    public DataResult<List<UserListDto>> getAll(int requesterId) {
+        DataResult<User> requester = getValidRequester(requesterId, UserRole.ADMIN);
+        if (!requester.isSuccess()) {
+            return new ErrorDataResult<>(null, requester.getMessage());
+        }
+
         List<User> users = userDao.findAll();
         List<UserListDto> dtoList = users.stream()
                 .map(user -> new UserListDto(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(), user.isActive()))
                 .collect(Collectors.toList());
+
         return new SuccessDataResult<>(dtoList, UserMessages.USER_LISTED);
     }
 
@@ -78,16 +84,27 @@ public class UserManager implements UserService {
     }
 
     @Override
-    public Result delete(int userId) {
+    public Result delete(int userId, int requesterId) {
+        DataResult<User> requester = getValidRequester(requesterId, UserRole.ADMIN);
+        if (!requester.isSuccess()) {
+            return new ErrorResult(requester.getMessage());
+        }
+
         if (!userDao.existsById(userId)) {
             return new ErrorResult(UserMessages.USER_NOT_FOUND);
         }
+
         userDao.deleteById(userId);
         return new SuccessResult(UserMessages.USER_DELETED);
     }
 
     @Override
-    public DataResult<UserDto> update(UserUpdateDto dto) {
+    public DataResult<UserDto> update(UserUpdateDto dto, int requesterId) {
+        DataResult<User> requester = getValidRequester(requesterId, UserRole.ADMIN);
+        if (!requester.isSuccess()) {
+            return new ErrorDataResult<>(requester.getMessage());
+        }
+
         Optional<User> userOpt = userDao.findById(dto.getId());
         if (userOpt.isEmpty()) {
             return new ErrorDataResult<>(UserMessages.USER_NOT_FOUND);
@@ -98,6 +115,7 @@ public class UserManager implements UserService {
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
         user.setRole(dto.getRole());
+
         userDao.save(user);
 
         return new SuccessDataResult<>(
@@ -144,5 +162,29 @@ public class UserManager implements UserService {
         userDao.save(user);
 
         return new SuccessDataResult<>(dto, UserMessages.USER_REGISTERED);
+    }
+
+    private DataResult<User> getValidRequester(int requesterId, UserRole... allowedRoles) {
+        Optional<User> userOpt = userDao.findById(requesterId);
+
+        if (userOpt.isEmpty()) {
+            return new ErrorDataResult<>(null, UserMessages.USER_NOT_FOUND);
+        }
+
+        User user = userOpt.get();
+
+        boolean hasAccess = false;
+        for (UserRole role : allowedRoles) {
+            if (user.getRole() == role) {
+                hasAccess = true;
+                break;
+            }
+        }
+
+        if (!hasAccess) {
+            return new ErrorDataResult<>(null, UserMessages.UNAUTHORIZED_ACTION);
+        }
+
+        return new SuccessDataResult<>(user);
     }
 }

@@ -1,9 +1,11 @@
 package com.example.tinyhouse.entities.dtos;
 
 import com.example.tinyhouse.entities.concretes.House;
+import com.example.tinyhouse.entities.concretes.User;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,6 +22,11 @@ public class HouseDto {
     private LocalDate availableFrom;
     private LocalDate availableTo;
 
+    private int commentCount;
+    private double averageRating;
+    private List<CommentDto> comments; // yorum listesi eklendi
+    private UserDto host;
+
     public HouseDto(House house) {
         this.id = house.getId();
         this.title = house.getTitle();
@@ -29,5 +36,6 @@ public class HouseDto {
         this.status = house.getStatus();
         this.availableFrom = house.getAvailableFrom();
         this.availableTo = house.getAvailableTo();
+        // commentCount ve averageRating dışarıdan manuel set edilmeli
     }
 }

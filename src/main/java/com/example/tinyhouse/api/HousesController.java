@@ -31,6 +31,11 @@ public class HousesController {
         return ResponseEntity.ok(houseService.getAll(requesterId));
     }
 
+    @GetMapping("/getActiveHouses")
+    public ResponseEntity<DataResult<List<HouseListDto>>> getActiveHouses(@RequestParam int requesterId) {
+        return ResponseEntity.ok(houseService.getActiveHouses(requesterId));
+    }
+
     @GetMapping("/getbyid")
     public ResponseEntity<DataResult<HouseDto>> getById(@RequestParam int id, @RequestParam int requesterId) {
         return ResponseEntity.ok(houseService.getById(id, requesterId));

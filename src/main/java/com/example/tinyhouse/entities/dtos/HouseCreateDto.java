@@ -20,3 +20,4 @@ public class HouseCreateDto {
     private LocalDate availableTo;
     private int hostId;
 }
+

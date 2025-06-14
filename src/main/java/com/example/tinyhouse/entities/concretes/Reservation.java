@@ -1,5 +1,6 @@
 package com.example.tinyhouse.entities.concretes;
 
+import com.example.tinyhouse.entities.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,8 +25,15 @@ public class Reservation {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status; // pending / approved / cancelled
+    private ReservationStatus status;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDate createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDate updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "renter_id")

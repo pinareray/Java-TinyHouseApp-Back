@@ -24,10 +24,11 @@ public class Payment {
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
 
-    @Column(name = "status")
-    private String status; // paid / unpaid
-
     @OneToOne
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // ödemeyi yapan kullanıcı
+    private User user;
 }

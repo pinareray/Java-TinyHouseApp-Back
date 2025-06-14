@@ -18,4 +18,9 @@ public class HouseListDto {
     private String status;
     private LocalDate availableFrom;
     private LocalDate availableTo;
+
+    private int commentCount;
+    private double averageRating;
+
+    private UserDto host;
 }

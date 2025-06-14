@@ -27,8 +27,8 @@ public class UsersController {
     }
 
     @GetMapping("/getall")
-    public ResponseEntity<DataResult<List<UserListDto>>> getAll() {
-        return ResponseEntity.ok(userService.getAll());
+    public ResponseEntity<DataResult<List<UserListDto>>> getAll(@RequestParam int requesterId) {
+        return ResponseEntity.ok(userService.getAll(requesterId));
     }
 
     @GetMapping("/getbyid")
@@ -43,13 +43,15 @@ public class UsersController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<DataResult<UserDto>> update(@Valid @RequestBody UserUpdateDto userDto) {
-        return ResponseEntity.ok(userService.update(userDto));
+    public ResponseEntity<DataResult<UserDto>> update(@Valid @RequestBody UserUpdateDto userDto,
+                                                      @RequestParam int requesterId) {
+        return ResponseEntity.ok(userService.update(userDto, requesterId));
     }
 
     @DeleteMapping("/deletebyid")
-    public ResponseEntity<Result> deleteById(@RequestParam int id) {
-        return ResponseEntity.ok(userService.delete(id));
+    public ResponseEntity<Result> deleteById(@RequestParam int id,
+                                             @RequestParam int requesterId) {
+        return ResponseEntity.ok(userService.delete(id, requesterId));
     }
 
     @PostMapping("/login")
@@ -64,3 +66,4 @@ public class UsersController {
         return ResponseEntity.ok(userService.register(dto));
     }
 }
+
