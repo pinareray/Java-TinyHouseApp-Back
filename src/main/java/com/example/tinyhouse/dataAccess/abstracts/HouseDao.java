@@ -8,6 +8,24 @@ import java.util.List;
 
 @Repository
 public interface HouseDao extends JpaRepository<House, Integer> {
-    List<House> findByStatus(String status); // Örn: Aktif ilanlar için
+    /**
+     * Belirtilen duruma (örneğin: Aktif, Pasif) sahip ilanları döndürür.
+     */
+    List<House> findByStatus(String status);
+
+    /**
+     * Belirli bir ev sahibine (host) ait tüm ilanları döndürür.
+     */
     List<House> findByHost_Id(int hostId);
+
+    /**
+     * Belirli bir ev sahibine ait, belirtilen duruma sahip ilanları döndürür.
+     * (Örn: host_id=3 ve status="Aktif" olanlar)
+     */
+    List<House> findByHost_IdAndStatus(int hostId, String status);
+
+    /**
+     * Başlığa göre arama yapar (partial match).
+     */
+    List<House> findByTitleContainingIgnoreCase(String keyword);
 }

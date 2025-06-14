@@ -12,4 +12,5 @@ public class UserMessages {
     public static final String USER_FOUND = "Kullanıcı bulundu.";
     public static final String USER_LISTED = "Kullanıcılar listelendi.";
     public static final String USER_REGISTERED = "Kayıt başarılı.";
+    public static final String UNAUTHORIZED_ACTION = "Bu işlemi yapmaya yetkiniz yok.";
 }

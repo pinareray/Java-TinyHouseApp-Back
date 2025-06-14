@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,9 @@ public class House {
 
     @Column(name = "status")
     private String status; // Aktif / Pasif
+
+    private LocalDate availableFrom;
+    private LocalDate availableTo;
 
     @ManyToOne
     @JoinColumn(name = "host_id")
