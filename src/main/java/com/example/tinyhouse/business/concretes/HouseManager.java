@@ -41,9 +41,12 @@ public class HouseManager implements HouseService {
                 .map(house -> new HouseListDto(
                         house.getId(),
                         house.getTitle(),
+                        house.getDescription(),
                         house.getPrice(),
                         house.getLocation(),
-                        house.getStatus()
+                        house.getStatus(),
+                        house.getAvailableFrom(),
+                        house.getAvailableTo()
                 ))
                 .collect(Collectors.toList());
         return new SuccessDataResult<>(dtoList, HouseMessages.HOUSE_LISTED);
@@ -143,7 +146,15 @@ public class HouseManager implements HouseService {
 
         List<House> houses = houseDao.findByHost_Id(hostId);
         List<HouseListDto> dtoList = houses.stream()
-                .map(h -> new HouseListDto(h.getId(), h.getTitle(), h.getPrice(), h.getLocation(), h.getStatus()))
+                .map(h -> new HouseListDto(
+                        h.getId(),
+                        h.getTitle(),
+                        h.getDescription(),
+                        h.getPrice(),
+                        h.getLocation(),
+                        h.getStatus(),
+                        h.getAvailableFrom(),
+                        h.getAvailableTo()))
                 .collect(Collectors.toList());
         return new SuccessDataResult<>(dtoList);
     }
